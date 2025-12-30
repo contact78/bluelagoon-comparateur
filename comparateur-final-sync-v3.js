@@ -1,4 +1,4 @@
-// comparateur-final-sync.js
+// comparateur-final-sync-v2.js
 const allSpasData = {
   "mono": [
     { "id": "swim23s", "img": "https://irp.cdn-website.com/a0ed638c/dms3rep/multi/acapulco2.webp", "title": "Swim 23S", "collection": "Mono", "collectionClass": "swim", "link": "#", "specs": { "Dimensions": "460 × 228 × 134 cm", "Places": "3 places", "Système de Nage": "3 pompes", "Jets Massage": "24 jets", "Hauteur de Nage": "130 cm", "Consommation Moyenne": "≈ 3,00 € / séance", "Caractéristiques Principales": "Nage à contre-courant, Sièges confort, LED" } },
@@ -31,6 +31,85 @@ window.renderGlobalComparator = function(category, containerId) {
     const data = allSpasData[category];
     const container = document.getElementById(containerId);
     if (!data || !container) return;
+
+    // Layout
+    container.innerHTML = `
+    <div class="comparator-wrapper"><div class="comparator-section">
+        <div class="selectors-container" style="display:flex"></div>
+        <div class="table-wrapper"><table></table></div>
+        <div class="comparison-cols"></div>
+    </div></div>`;
+
+    const table = container.querySelector('table');
+    const selectors = container.querySelector('.selectors-container');
+    const cols = container.querySelector('.comparison-cols');
+
+    // Headers Desktop
+    let tHtml = '<tr><th>Caractéristiques</th>';
+    data.forEach((spa, i) => {
+        tHtml += `<th class="spa-col" data-idx="${i}"><div class="spa-header"><img src="${spa.img}" class="spa-img"><div class="spa-title">${spa.title}</div><span class="spa-badge ${spa.collectionClass}">${spa.collection}</span></div></th>`;
+    });
+    tHtml += '</tr>';
+
+    // Specs
+    Object.keys(data[0].specs).forEach(key => {
+        tHtml += `<tr><td>${key}</td>`;
+        data.forEach((spa, i) => { tHtml += `<td class="spa-col" data-idx="${i}">${spa.specs[key]}</td>`; });
+        tHtml += '</tr>';
+    });
+
+    // Action
+    tHtml += '<tr><td>Action</td>';
+    data.forEach((spa, i) => { tHtml += `<td class="spa-col" data-idx="${i}"><a href="${spa.link}" class="btn">Découvrir</a></td>`; });
+    tHtml += '</tr>';
+    table.innerHTML = tHtml;
+
+    // Menus
+    let sHtml = '';
+    for (let i = 1; i <= 2; i++) {
+        sHtml += `<div class="selector-group"><label>Spa ${i}</label><select>`;
+        data.forEach((spa, idx) => { sHtml += `<option value="${idx}" ${idx === i-1 ? 'selected' : ''}>${spa.title}</option>`; });
+        sHtml += `</select></div>`;
+    }
+    selectors.innerHTML = sHtml;
+
+    const update = () => {
+        const selected = Array.from(selectors.querySelectorAll('select')).map(s => parseInt(s.value));
+        
+        table.querySelectorAll('.spa-col').forEach(c => {
+            c.style.display = selected.includes(parseInt(c.dataset.idx)) ? 'table-cell' : 'none';
+        });
+
+        let cHtml = '';
+        selected.forEach(idx => {
+            const spa = data[idx];
+            cHtml += `<div class="comparison-col"><div class="spa-header"><img src="${spa.img}" class="spa-img"><div class="spa-title">${spa.title}</div><span class="spa-badge ${spa.collectionClass}">${spa.collection}</span></div>`;
+            Object.keys(spa.specs).forEach(k => {
+                cHtml += `<div class="comparison-row"><div class="comparison-row-label">${k}</div><div class="comparison-row-value">${spa.specs[k]}</div></div>`;
+            });
+            cHtml += `<div class="comparison-row" style="border:none;margin-top:10px"><a href="${spa.link}" class="btn">Découvrir</a></div></div>`;
+        });
+        cols.innerHTML = cHtml;
+    };
+
+    selectors.querySelectorAll('select').forEach(s => s.addEventListener('change', update));
+    update();
+};
+
+// Fonction pour les pages produit (met le spa actuel en premier)
+window.initProductComparator = function(spaId, category, containerId) {
+    let data = [...allSpasData[category]];
+    if (!data) return;
+
+    // Réordonner pour mettre le spa actuel en premier
+    const currentIndex = data.findIndex(s => s.id === spaId);
+    if (currentIndex > 0) {
+        const current = data[currentIndex];
+        data = [current, ...data.filter((_, i) => i !== currentIndex)];
+    }
+
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
     // Layout
     container.innerHTML = `
