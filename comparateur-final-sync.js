@@ -32,64 +32,66 @@ window.renderGlobalComparator = function(category, containerId) {
     const container = document.getElementById(containerId);
     if (!data || !container) return;
 
-    let html = `<div class="comparator-wrapper"><div class="comparator-section">`;
-    html += `<div class="selectors-container" style="display:flex"></div>`;
-    html += `<div class="table-wrapper"><table></table></div>`;
-    html += `<div class="comparison-cols"></div>`;
-    html += `</div></div>`;
-    container.innerHTML = html;
+    // Layout
+    container.innerHTML = `
+    <div class="comparator-wrapper"><div class="comparator-section">
+        <div class="selectors-container" style="display:flex"></div>
+        <div class="table-wrapper"><table></table></div>
+        <div class="comparison-cols"></div>
+    </div></div>`;
 
     const table = container.querySelector('table');
-    const selectorsContainer = container.querySelector('.selectors-container');
-    const colsContainer = container.querySelector('.comparison-cols');
+    const selectors = container.querySelector('.selectors-container');
+    const cols = container.querySelector('.comparison-cols');
 
-    // Headers
-    let tableHtml = '<tr><th>Caractéristiques</th>';
-    data.forEach((spa, idx) => {
-        tableHtml += `<th class="spa-col" data-index="${idx}"><div class="spa-header"><img src="${spa.img}" class="spa-img"><div class="spa-title">${spa.title}</div><span class="spa-badge ${spa.collectionClass}">${spa.collection}</span></div></th>`;
+    // Headers Desktop
+    let tHtml = '<tr><th>Caractéristiques</th>';
+    data.forEach((spa, i) => {
+        tHtml += `<th class="spa-col" data-idx="${i}"><div class="spa-header"><img src="${spa.img}" class="spa-img"><div class="spa-title">${spa.title}</div><span class="spa-badge ${spa.collectionClass}">${spa.collection}</span></div></th>`;
     });
-    tableHtml += '</tr>';
+    tHtml += '</tr>';
 
     // Specs
     Object.keys(data[0].specs).forEach(key => {
-        tableHtml += `<tr><td>${key}</td>`;
-        data.forEach((spa, idx) => { tableHtml += `<td class="spa-col" data-index="${idx}">${spa.specs[key]}</td>`; });
-        tableHtml += '</tr>';
+        tHtml += `<tr><td>${key}</td>`;
+        data.forEach((spa, i) => { tHtml += `<td class="spa-col" data-idx="${i}">${spa.specs[key]}</td>`; });
+        tHtml += '</tr>';
     });
 
-    // Button
-    tableHtml += '<tr><td>Action</td>';
-    data.forEach((spa, idx) => { tableHtml += `<td class="spa-col" data-index="${idx}"><a href="${spa.link}" class="btn">Découvrir</a></td>`; });
-    tableHtml += '</tr>';
-    table.innerHTML = tableHtml;
+    // Action
+    tHtml += '<tr><td>Action</td>';
+    data.forEach((spa, i) => { tHtml += `<td class="spa-col" data-idx="${i}"><a href="${spa.link}" class="btn">Découvrir</a></td>`; });
+    tHtml += '</tr>';
+    table.innerHTML = tHtml;
 
-    // Selectors
-    let selHtml = '';
+    // Menus
+    let sHtml = '';
     for (let i = 1; i <= 2; i++) {
-        selHtml += `<div class="selector-group"><label>Spa ${i}</label><select class="spa-selector">`;
-        data.forEach((spa, idx) => { selHtml += `<option value="${idx}" ${idx === i-1 ? 'selected' : ''}>${spa.title}</option>`; });
-        selHtml += `</select></div>`;
+        sHtml += `<div class="selector-group"><label>Spa ${i}</label><select>`;
+        data.forEach((spa, idx) => { sHtml += `<option value="${idx}" ${idx === i-1 ? 'selected' : ''}>${spa.title}</option>`; });
+        sHtml += `</select></div>`;
     }
-    selectorsContainer.innerHTML = selHtml;
+    selectors.innerHTML = sHtml;
 
     const update = () => {
-        const selected = Array.from(selectorsContainer.querySelectorAll('select')).map(s => parseInt(s.value));
-        table.querySelectorAll('.spa-col').forEach(col => {
-            col.style.display = selected.includes(parseInt(col.dataset.index)) ? 'table-cell' : 'none';
+        const selected = Array.from(selectors.querySelectorAll('select')).map(s => parseInt(s.value));
+        
+        table.querySelectorAll('.spa-col').forEach(c => {
+            c.style.display = selected.includes(parseInt(c.dataset.idx)) ? 'table-cell' : 'none';
         });
 
-        let colHtml = '';
+        let cHtml = '';
         selected.forEach(idx => {
             const spa = data[idx];
-            colHtml += `<div class="comparison-col"><div class="spa-header"><img src="${spa.img}" class="spa-img"><div class="spa-title">${spa.title}</div><span class="spa-badge ${spa.collectionClass}">${spa.collection}</span></div>`;
-            Object.keys(spa.specs).forEach(key => {
-                colHtml += `<div class="comparison-row"><div class="comparison-row-label">${key}</div><div class="comparison-row-value">${spa.specs[key]}</div></div>`;
+            cHtml += `<div class="comparison-col"><div class="spa-header"><img src="${spa.img}" class="spa-img"><div class="spa-title">${spa.title}</div><span class="spa-badge ${spa.collectionClass}">${spa.collection}</span></div>`;
+            Object.keys(spa.specs).forEach(k => {
+                cHtml += `<div class="comparison-row"><div class="comparison-row-label">${k}</div><div class="comparison-row-value">${spa.specs[k]}</div></div>`;
             });
-            colHtml += `<div class="comparison-row" style="border-bottom:none; margin-top:10px;"><a href="${spa.link}" class="btn">Découvrir</a></div></div>`;
+            cHtml += `<div class="comparison-row" style="border:none;margin-top:10px"><a href="${spa.link}" class="btn">Découvrir</a></div></div>`;
         });
-        colsContainer.innerHTML = colHtml;
+        cols.innerHTML = cHtml;
     };
 
-    selectorsContainer.querySelectorAll('select').forEach(s => s.addEventListener('change', update));
+    selectors.querySelectorAll('select').forEach(s => s.addEventListener('change', update));
     update();
 };
