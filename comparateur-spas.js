@@ -1,4 +1,4 @@
-// Données centralisées
+// comparateur-spas.js
 const allSpasData = {
   "mono": [
     { "id": "swim23s", "img": "https://irp.cdn-website.com/a0ed638c/dms3rep/multi/acapulco2.webp", "title": "Swim 23S", "collection": "Mono", "collectionClass": "swim", "link": "#", "specs": { "Dimensions": "460 × 228 × 134 cm", "Places": "3 places", "Système de Nage": "3 pompes", "Jets Massage": "24 jets", "Hauteur de Nage": "130 cm", "Consommation Moyenne": "≈ 3,00 € / séance", "Caractéristiques Principales": "Nage à contre-courant, Sièges confort, LED" } },
@@ -27,17 +27,16 @@ const allSpasData = {
   ]
 };
 
-// Fonction d'initialisation complète
-function renderSpaComparator(category, tableId, selectorsId, colsId) {
+window.renderSpaComparator = function(category, tableId, selectorsId, colsId) {
     const data = allSpasData[category];
-    if (!data) return;
-
     const tableElem = document.getElementById(tableId);
     const selectorsElem = document.getElementById(selectorsId);
     const colsElem = document.getElementById(colsId);
 
-    // 1. Générer le Tableau Desktop
-    let tableHtml = '<tr><th>Caractéristiques</th>';
+    if (!data || !tableElem) return;
+
+    // 1. Desktop Table
+    let tableHtml = '<thead><tr><th>Caractéristiques</th>';
     data.forEach((spa, idx) => {
         tableHtml += `<th class="spa-col" data-index="${idx}">
             <div class="spa-header">
@@ -47,7 +46,7 @@ function renderSpaComparator(category, tableId, selectorsId, colsId) {
             </div>
         </th>`;
     });
-    tableHtml += '</tr>';
+    tableHtml += '</tr></thead><tbody>';
 
     const specKeys = Object.keys(data[0].specs);
     specKeys.forEach(key => {
@@ -62,11 +61,10 @@ function renderSpaComparator(category, tableId, selectorsId, colsId) {
     data.forEach((spa, idx) => {
         tableHtml += `<td class="spa-col" data-index="${idx}"><a href="${spa.link}" class="btn">Découvrir</a></td>`;
     });
-    tableHtml += '</tr>';
-    
-    if(tableElem) tableElem.innerHTML = tableHtml;
+    tableHtml += '</tr></tbody>';
+    tableElem.innerHTML = tableHtml;
 
-    // 2. Générer les Sélecteurs Mobile
+    // 2. Mobile Selectors
     if (selectorsElem) {
         let selHtml = '';
         for (let i = 1; i <= 2; i++) {
@@ -79,18 +77,15 @@ function renderSpaComparator(category, tableId, selectorsId, colsId) {
             selHtml += `</select></div>`;
         }
         selectorsElem.innerHTML = selHtml;
-
-        // Événement de changement
-        selectorsElem.querySelectorAll('select').forEach(select => {
-            select.addEventListener('change', () => updateVisibility(category, tableId, selectorsId, colsId));
+        selectorsElem.querySelectorAll('select').forEach(s => {
+            s.addEventListener('change', () => updateTableVisibility(category, tableId, selectorsId, colsId));
         });
     }
 
-    // Initialiser l'affichage
-    updateVisibility(category, tableId, selectorsId, colsId);
-}
+    updateTableVisibility(category, tableId, selectorsId, colsId);
+};
 
-function updateVisibility(category, tableId, selectorsId, colsId) {
+function updateTableVisibility(category, tableId, selectorsId, colsId) {
     const data = allSpasData[category];
     const selectorsElem = document.getElementById(selectorsId);
     const tableElem = document.getElementById(tableId);
@@ -98,17 +93,18 @@ function updateVisibility(category, tableId, selectorsId, colsId) {
 
     if (!selectorsElem) return;
 
-    const selectedIndices = Array.from(selectorsElem.querySelectorAll('select')).map(s => parseInt(s.value));
+    const selects = selectorsElem.querySelectorAll('select');
+    const selectedIndices = Array.from(selects).map(s => parseInt(s.value));
 
-    // Update Table Desktop
+    // Desktop
     if (tableElem) {
         tableElem.querySelectorAll('.spa-col').forEach(col => {
             const idx = parseInt(col.dataset.index);
-            col.classList.toggle('visible', selectedIndices.includes(idx));
+            col.style.display = selectedIndices.includes(idx) ? 'table-cell' : 'none';
         });
     }
 
-    // Update Colonnes Mobile
+    // Mobile
     if (colsElem) {
         let colHtml = '';
         selectedIndices.forEach(idx => {
@@ -124,7 +120,7 @@ function updateVisibility(category, tableId, selectorsId, colsId) {
                     <div class="comparison-row-value">${spa.specs[key]}</div>
                 </div>`;
             });
-            colHtml += `<div class="comparison-row"><a href="${spa.link}" class="btn">Découvrir</a></div></div>`;
+            colHtml += `<div class="btn-wrap"><a href="${spa.link}" class="btn">Découvrir</a></div></div>`;
         });
         colsElem.innerHTML = colHtml;
     }
