@@ -1,4 +1,4 @@
-// comparateur-spas.js
+// Données centralisées
 const allSpasData = {
   "mono": [
     { "id": "swim23s", "img": "https://irp.cdn-website.com/a0ed638c/dms3rep/multi/acapulco2.webp", "title": "Swim 23S", "collection": "Mono", "collectionClass": "swim", "link": "#", "specs": { "Dimensions": "460 × 228 × 134 cm", "Places": "3 places", "Système de Nage": "3 pompes", "Jets Massage": "24 jets", "Hauteur de Nage": "130 cm", "Consommation Moyenne": "≈ 3,00 € / séance", "Caractéristiques Principales": "Nage à contre-courant, Sièges confort, LED" } },
@@ -27,6 +27,7 @@ const allSpasData = {
   ]
 };
 
+// Fonction globale d'affichage
 window.renderSpaComparator = function(category, tableId, selectorsId, colsId) {
     const data = allSpasData[category];
     const tableElem = document.getElementById(tableId);
@@ -35,7 +36,7 @@ window.renderSpaComparator = function(category, tableId, selectorsId, colsId) {
 
     if (!data || !tableElem) return;
 
-    // 1. Desktop Table
+    // Construction Table Desktop
     let tableHtml = '<thead><tr><th>Caractéristiques</th>';
     data.forEach((spa, idx) => {
         tableHtml += `<th class="spa-col" data-index="${idx}">
@@ -48,8 +49,7 @@ window.renderSpaComparator = function(category, tableId, selectorsId, colsId) {
     });
     tableHtml += '</tr></thead><tbody>';
 
-    const specKeys = Object.keys(data[0].specs);
-    specKeys.forEach(key => {
+    Object.keys(data[0].specs).forEach(key => {
         tableHtml += `<tr><td>${key}</td>`;
         data.forEach((spa, idx) => {
             tableHtml += `<td class="spa-col" data-index="${idx}">${spa.specs[key]}</td>`;
@@ -64,13 +64,11 @@ window.renderSpaComparator = function(category, tableId, selectorsId, colsId) {
     tableHtml += '</tr></tbody>';
     tableElem.innerHTML = tableHtml;
 
-    // 2. Mobile Selectors
+    // Construction Sélecteurs Mobile
     if (selectorsElem) {
         let selHtml = '';
         for (let i = 1; i <= 2; i++) {
-            selHtml += `<div class="selector-group">
-                <label>Spa ${i}</label>
-                <select class="spa-selector" data-pos="${i-1}">`;
+            selHtml += `<div class="selector-group"><label>Spa ${i}</label><select class="spa-selector">`;
             data.forEach((spa, idx) => {
                 selHtml += `<option value="${idx}" ${idx === i-1 ? 'selected' : ''}>${spa.title}</option>`;
             });
@@ -93,10 +91,8 @@ function updateTableVisibility(category, tableId, selectorsId, colsId) {
 
     if (!selectorsElem) return;
 
-    const selects = selectorsElem.querySelectorAll('select');
-    const selectedIndices = Array.from(selects).map(s => parseInt(s.value));
+    const selectedIndices = Array.from(selectorsElem.querySelectorAll('select')).map(s => parseInt(s.value));
 
-    // Desktop
     if (tableElem) {
         tableElem.querySelectorAll('.spa-col').forEach(col => {
             const idx = parseInt(col.dataset.index);
@@ -104,21 +100,14 @@ function updateTableVisibility(category, tableId, selectorsId, colsId) {
         });
     }
 
-    // Mobile
     if (colsElem) {
         let colHtml = '';
         selectedIndices.forEach(idx => {
             const spa = data[idx];
             colHtml += `<div class="comparison-col">
-                <div class="spa-header">
-                    <img src="${spa.img}" class="spa-img">
-                    <div class="spa-title">${spa.title}</div>
-                </div>`;
+                <div class="spa-header"><img src="${spa.img}" class="spa-img"><div class="spa-title">${spa.title}</div></div>`;
             Object.keys(spa.specs).forEach(key => {
-                colHtml += `<div class="comparison-row">
-                    <div class="comparison-row-label">${key}</div>
-                    <div class="comparison-row-value">${spa.specs[key]}</div>
-                </div>`;
+                colHtml += `<div class="comparison-row"><div class="comparison-row-label">${key}</div><div class="comparison-row-value">${spa.specs[key]}</div></div>`;
             });
             colHtml += `<div class="btn-wrap"><a href="${spa.link}" class="btn">Découvrir</a></div></div>`;
         });
