@@ -1,5 +1,4 @@
-// comparateur-spas.js
-// Données centralisées pour tous les spas
+// Données centralisées
 const allSpasData = {
   "mono": [
     { "id": "swim23s", "img": "https://irp.cdn-website.com/a0ed638c/dms3rep/multi/acapulco2.webp", "title": "Swim 23S", "collection": "Mono", "collectionClass": "swim", "link": "#", "specs": { "Dimensions": "460 × 228 × 134 cm", "Places": "3 places", "Système de Nage": "3 pompes", "Jets Massage": "24 jets", "Hauteur de Nage": "130 cm", "Consommation Moyenne": "≈ 3,00 € / séance", "Caractéristiques Principales": "Nage à contre-courant, Sièges confort, LED" } },
@@ -28,109 +27,105 @@ const allSpasData = {
   ]
 };
 
-// Fonction pour afficher le tableau sur les pages de spa
-function initComparatorWidget(spaId, category) {
-  const data = allSpasData[category];
-  if (!data || data.length === 0) return;
+// Fonction d'initialisation complète
+function renderSpaComparator(category, tableId, selectorsId, colsId) {
+    const data = allSpasData[category];
+    if (!data) return;
 
-  const widget = document.getElementById('spa-comparator-widget');
-  if (!widget) return;
+    const tableElem = document.getElementById(tableId);
+    const selectorsElem = document.getElementById(selectorsId);
+    const colsElem = document.getElementById(colsId);
 
-  const currentSpaIndex = data.findIndex(s => s.id === spaId);
-  const ordered = currentSpaIndex >= 0 ? 
-    [data[currentSpaIndex], ...data.filter((_, i) => i !== currentSpaIndex)] : 
-    data;
-
-  let html = `<div class="comparator-wrapper"><div class="comparator-section">`;
-  html += `<div class="selectors-container" id="widget-selectors"></div>`;
-  html += `<div class="table-wrapper"><table id="widget-table"></table></div>`;
-  html += `<div class="comparison-cols" id="widget-cols"></div>`;
-  html += `</div></div>`;
-  
-  widget.innerHTML = html;
-  renderTable(ordered);
-}
-
-function renderTable(data) {
-  let html = '<tr><th>Caractéristiques</th>';
-  data.forEach((spa, idx) => {
-    html += `<th class="spa-col" data-index="${idx}"><div class="spa-header"><img src="${spa.img}" class="spa-img" alt="${spa.title}"><div class="spa-title">${spa.title}</div><span class="spa-badge ${spa.collectionClass}">${spa.collection}</span></div></th>`;
-  });
-  html += '</tr>';
-  const specKeys = Object.keys(data[0].specs);
-  specKeys.forEach(key => {
-    html += `<tr><td>${key}</td>`;
+    // 1. Générer le Tableau Desktop
+    let tableHtml = '<tr><th>Caractéristiques</th>';
     data.forEach((spa, idx) => {
-      html += `<td class="spa-col" data-index="${idx}">${spa.specs[key]}</td>`;
+        tableHtml += `<th class="spa-col" data-index="${idx}">
+            <div class="spa-header">
+                <img src="${spa.img}" class="spa-img" alt="${spa.title}">
+                <div class="spa-title">${spa.title}</div>
+                <span class="spa-badge ${spa.collectionClass}">${spa.collection}</span>
+            </div>
+        </th>`;
     });
-    html += '</tr>';
-  });
-  html += '<tr><td>Action</td>';
-  data.forEach((spa, idx) => {
-    html += `<td class="spa-col" data-index="${idx}"><a href="${spa.link}" class="btn">Découvrir</a></td>`;
-  });
-  html += '</tr>';
-  
-  document.getElementById('widget-table').innerHTML = html;
-  createSelectors(data);
-  updateDisplay(data);
-}
+    tableHtml += '</tr>';
 
-function createSelectors(data) {
-  const selectorsContainer = document.getElementById('widget-selectors');
-  let html = '';
-  for (let i = 1; i <= 2; i++) {
-    html += `<div class="selector-group">
-      <label>Spa ${i}</label>
-      <select class="spa-selector" data-position="${i-1}">
-        <option value="">-- Sélectionner --</option>`;
-    data.forEach((spa, idx) => {
-      html += `<option value="${idx}">${spa.title}</option>`;
-    });
-    html += `</select></div>`;
-  }
-  selectorsContainer.innerHTML = html;
-  const selects = selectorsContainer.querySelectorAll('select');
-  selects.forEach((select, i) => {
-    select.value = i;
-    select.addEventListener('change', () => updateDisplay(data));
-  });
-}
-
-function updateDisplay(data) {
-  const selectorsContainer = document.getElementById('widget-selectors');
-  const selects = selectorsContainer.querySelectorAll('select');
-  const selectedIndices = Array.from(selects).map(select => parseInt(select.value)).filter(v => !isNaN(v));
-  const table = document.getElementById('widget-table');
-  const cols = table.querySelectorAll('.spa-col');
-  cols.forEach(col => {
-    const idx = parseInt(col.dataset.index);
-    col.classList.toggle('visible', selectedIndices.includes(idx));
-  });
-  renderMobileColumns(data, selectedIndices);
-}
-
-function renderMobileColumns(data, selectedIndices) {
-  const colsContainer = document.getElementById('widget-cols');
-  let html = '';
-  selectedIndices.forEach(idx => {
-    const spa = data[idx];
-    const specKeys = Object.keys(spa.specs);
-    html += `<div class="comparison-col">
-      <div class="spa-header">
-        <img src="${spa.img}" class="spa-img" alt="${spa.title}">
-        <div class="spa-title">${spa.title}</div>
-        <span class="spa-badge ${spa.collectionClass}">${spa.collection}</span>
-      </div>`;
+    const specKeys = Object.keys(data[0].specs);
     specKeys.forEach(key => {
-      html += `<div class="comparison-row">
-        <div class="comparison-row-label">${key}</div>
-        <div class="comparison-row-value">${spa.specs[key]}</div>
-      </div>`;
+        tableHtml += `<tr><td>${key}</td>`;
+        data.forEach((spa, idx) => {
+            tableHtml += `<td class="spa-col" data-index="${idx}">${spa.specs[key]}</td>`;
+        });
+        tableHtml += '</tr>';
     });
-    html += `<div class="comparison-row" style="border-bottom: none; margin-top: 10px;">
-      <a href="${spa.link}" class="btn">Découvrir</a>
-    </div></div>`;
-  });
-  colsContainer.innerHTML = html;
+
+    tableHtml += '<tr><td>Action</td>';
+    data.forEach((spa, idx) => {
+        tableHtml += `<td class="spa-col" data-index="${idx}"><a href="${spa.link}" class="btn">Découvrir</a></td>`;
+    });
+    tableHtml += '</tr>';
+    
+    if(tableElem) tableElem.innerHTML = tableHtml;
+
+    // 2. Générer les Sélecteurs Mobile
+    if (selectorsElem) {
+        let selHtml = '';
+        for (let i = 1; i <= 2; i++) {
+            selHtml += `<div class="selector-group">
+                <label>Spa ${i}</label>
+                <select class="spa-selector" data-pos="${i-1}">`;
+            data.forEach((spa, idx) => {
+                selHtml += `<option value="${idx}" ${idx === i-1 ? 'selected' : ''}>${spa.title}</option>`;
+            });
+            selHtml += `</select></div>`;
+        }
+        selectorsElem.innerHTML = selHtml;
+
+        // Événement de changement
+        selectorsElem.querySelectorAll('select').forEach(select => {
+            select.addEventListener('change', () => updateVisibility(category, tableId, selectorsId, colsId));
+        });
+    }
+
+    // Initialiser l'affichage
+    updateVisibility(category, tableId, selectorsId, colsId);
+}
+
+function updateVisibility(category, tableId, selectorsId, colsId) {
+    const data = allSpasData[category];
+    const selectorsElem = document.getElementById(selectorsId);
+    const tableElem = document.getElementById(tableId);
+    const colsElem = document.getElementById(colsId);
+
+    if (!selectorsElem) return;
+
+    const selectedIndices = Array.from(selectorsElem.querySelectorAll('select')).map(s => parseInt(s.value));
+
+    // Update Table Desktop
+    if (tableElem) {
+        tableElem.querySelectorAll('.spa-col').forEach(col => {
+            const idx = parseInt(col.dataset.index);
+            col.classList.toggle('visible', selectedIndices.includes(idx));
+        });
+    }
+
+    // Update Colonnes Mobile
+    if (colsElem) {
+        let colHtml = '';
+        selectedIndices.forEach(idx => {
+            const spa = data[idx];
+            colHtml += `<div class="comparison-col">
+                <div class="spa-header">
+                    <img src="${spa.img}" class="spa-img">
+                    <div class="spa-title">${spa.title}</div>
+                </div>`;
+            Object.keys(spa.specs).forEach(key => {
+                colHtml += `<div class="comparison-row">
+                    <div class="comparison-row-label">${key}</div>
+                    <div class="comparison-row-value">${spa.specs[key]}</div>
+                </div>`;
+            });
+            colHtml += `<div class="comparison-row"><a href="${spa.link}" class="btn">Découvrir</a></div></div>`;
+        });
+        colsElem.innerHTML = colHtml;
+    }
 }
