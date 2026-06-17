@@ -94,10 +94,21 @@ window.initSimulateur = function(opts) {
   }
 
   const maxApport = prix - cfg.MIN_FINANCEMENT;
+
+  // Apport minimum : surchargé par produit, sinon valeur globale
+  const minApport = (opts.minApport != null) ? opts.minApport : cfg.MIN_APPORT;
+
+  // Apport par défaut : valeur explicite du produit, sinon % du prix
   const apportDefaut = Math.min(
     maxApport,
-    Math.max(cfg.MIN_APPORT, Math.round(prix * cfg.APPORT_DEFAUT_PCT))
+    Math.max(
+      minApport,
+      (opts.apportDefaut != null) ? opts.apportDefaut : Math.round(prix * cfg.APPORT_DEFAUT_PCT)
+    )
   );
+
+  // Durée par défaut : surchargée par produit, sinon valeur globale
+  const dureeDefaut = (opts.dureeDefaut != null) ? opts.dureeDefaut : cfg.DUREE_DEFAUT;
 
   // Identifiant unique par instance (au cas où plusieurs simulateurs sur une page)
   const uid = 'sim_' + Math.random().toString(36).slice(2, 8);
@@ -106,7 +117,7 @@ window.initSimulateur = function(opts) {
   let SIM = {};
 
   const dureeOptions = cfg.DUREES.map(d =>
-    `<option value="${d}" ${d === cfg.DUREE_DEFAUT ? 'selected' : ''}>${d} mois</option>`
+    `<option value="${d}" ${d === dureeDefaut ? "selected" : ""}>${d} mois</option>`
   ).join('');
 
   container.classList.add('simulateur-container');
@@ -120,12 +131,12 @@ window.initSimulateur = function(opts) {
           Apport personnel
           <div class="info-tooltip">i<div class="tooltip-content">Votre apport réduit le montant à financer.</div></div>
         </div>
-        <input id="apport-${uid}" class="amount-input" type="number" value="${apportDefaut}" min="${cfg.MIN_APPORT}" max="${maxApport}">
+        <input id="apport-${uid}" class="amount-input" type="number" value="${apportDefaut}" min="${minApport}" max="${maxApport}">
         <div class="slider-container">
           <div id="track-${uid}" class="slider-track"></div>
-          <input id="slider-${uid}" class="slider" type="range" min="${cfg.MIN_APPORT}" max="${maxApport}" value="${apportDefaut}">
+          <input id="slider-${uid}" class="slider" type="range" min="${minApport}" max="${maxApport}" value="${apportDefaut}">
         </div>
-        <div class="slider-labels"><span>${fmtEUR(cfg.MIN_APPORT)}</span><span>${fmtEUR(maxApport)}</span></div>
+        <div class="slider-labels"><span>${fmtEUR(minApport)}</span><span>${fmtEUR(maxApport)}</span></div>
         <div class="slider-info">
           <div><strong>À financer</strong><br><span id="afinancer-${uid}"></span></div>
           <div><strong>% apport</strong><br><span id="pct-${uid}"></span></div>
@@ -183,17 +194,17 @@ window.initSimulateur = function(opts) {
 
   function calcule() {
     let v = parseInt(slider.value) || parseInt(inputApport.value) || apportDefaut;
-    v = Math.max(cfg.MIN_APPORT, Math.min(maxApport, v));
+    v = Math.max(minApport, Math.min(maxApport, v));
     inputApport.value = slider.value = v;
 
-    const p = ((v - cfg.MIN_APPORT) / (maxApport - cfg.MIN_APPORT)) * 100;
+    const p = ((v - minApport) / (maxApport - minApport)) * 100;
     track.style.width = p + '%';
 
     const montantFinance = prix - v;
     afinancer.textContent = fmtEUR(montantFinance);
     pct.textContent = Math.round(v / prix * 100) + ' %';
 
-    const d = parseInt(selectDuree.value) || cfg.DUREE_DEFAUT;
+    const d = parseInt(selectDuree.value) || dureeDefaut;
     const taux = cfg.TAEG / 100 / 12;
     const ms = ((montantFinance * taux * Math.pow(1 + taux, d)) / (Math.pow(1 + taux, d) - 1)) || 0;
     const mensualite = Math.round(ms);
