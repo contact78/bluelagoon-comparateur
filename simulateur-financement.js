@@ -44,9 +44,8 @@ function getTaeg(montantFinance) {
   @media(max-width:1024px) and (min-width:769px){ .simulator-grid .simulator-card h2{font-size:24px!important;} .simulator-grid .payment-amount{font-size:30px!important;} .simulator-grid .subtitle{font-size:15px!important;} }
   @media(max-width:768px){ .simulator-grid{grid-template-columns:1fr;} .simulator-grid .simulator-card h2{font-size:20px!important;margin-bottom:20px!important;} .simulator-grid .payment-amount{font-size:28px!important;} .simulator-grid .subtitle{font-size:12px!important;} }
   .simulator-card { background:#fff; border-radius:24px; padding:40px; border:1px solid #e2e8f0; box-shadow:0 20px 40px rgba(0,0,0,0.08); }
-  .simulator-card h2 { font-size:28px; font-weight:700; color:#161f2a; text-align:center; margin-bottom:8px; line-height:1.2; width:100%; display:flex; justify-content:center; align-items:center; }
+  .simulator-card h2 { font-size:28px; font-weight:700; color:#161f2a; text-align:center; margin-bottom:32px; line-height:1.2; width:100%; display:flex; justify-content:center; align-items:center; }
   .simulator-card .subtitle { text-align:center; color:#64748b; margin-bottom:40px; font-size:16px; line-height:1.3; }
-  .credit-warning { text-align:center; color:#161f2a; font-size:11px; font-weight:600; margin-top:-32px; margin-bottom:32px; line-height:1.3; opacity:0.85; }
   .form-section { margin-bottom:32px; }
   .form-label { display:flex; align-items:center; gap:12px; font-weight:600; color:#1e293b; margin-bottom:16px; }
   .info-tooltip { position:relative; cursor:help; display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#161f2a; color:#fff; font-family:'Courier New','Monaco','Consolas',monospace; font-size:12px; font-weight:700; }
@@ -138,8 +137,6 @@ window.initSimulateur = function(opts) {
    <div class="simulator-grid">
     <div class="simulator-card">
       <h2>${titre}</h2>
-      <p class="subtitle">Découvrez votre mensualité selon votre apport</p>
-      <p class="credit-warning">Un crédit vous engage et doit être remboursé. Vérifiez vos capacités de remboursement avant de vous engager.</p>
       <div class="form-section">
         <div class="form-label">
           Apport personnel
