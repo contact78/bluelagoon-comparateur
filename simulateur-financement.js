@@ -7,7 +7,13 @@
 
 // 🔧 ─── PARAMÈTRES GLOBAUX (à modifier ici uniquement) ───────
 const FINANCEMENT_CONFIG = {
-  TAEG: 5.75,             // ← LE SEUL endroit à changer quand le taux évolue
+  // Paliers de TAEG selon le MONTANT FINANCÉ (après apport).
+  // Le 1er palier dont "jusqu_a" est >= au montant financé s'applique.
+  // ← C'est ICI qu'on modifie les taux quand ils évoluent.
+  TAEG_PALIERS: [
+    { jusqu_a: 9999,     taeg: 5.95 },  // de 0 à 9 999 €
+    { jusqu_a: Infinity, taeg: 6.95 }   // 10 000 € et au-delà
+  ],
   MIN_FINANCEMENT: 1000,  // montant minimum finançable
   MIN_APPORT: 500,        // apport minimum
   // Apport par défaut : pourcentage du prix (30 % ici)
@@ -20,6 +26,12 @@ const FINANCEMENT_CONFIG = {
   HUBSPOT_FORM: '#contact-form',   // identifiant du formulaire externe
   REDIRECT_URL: 'https://www.bluelagoonspas.com/remerciements' // '' pour désactiver
 };
+
+// Renvoie le TAEG applicable pour un montant financé donné
+function getTaeg(montantFinance) {
+  const palier = FINANCEMENT_CONFIG.TAEG_PALIERS.find(p => montantFinance <= p.jusqu_a);
+  return palier ? palier.taeg : FINANCEMENT_CONFIG.TAEG_PALIERS[FINANCEMENT_CONFIG.TAEG_PALIERS.length - 1].taeg;
+}
 // ─────────────────────────────────────────────────────────────
 
 // Injection du CSS une seule fois (même si plusieurs simulateurs sur la page)
@@ -34,6 +46,7 @@ const FINANCEMENT_CONFIG = {
   .simulator-card { background:#fff; border-radius:24px; padding:40px; border:1px solid #e2e8f0; box-shadow:0 20px 40px rgba(0,0,0,0.08); }
   .simulator-card h2 { font-size:28px; font-weight:700; color:#161f2a; text-align:center; margin-bottom:8px; line-height:1.2; width:100%; display:flex; justify-content:center; align-items:center; }
   .simulator-card .subtitle { text-align:center; color:#64748b; margin-bottom:40px; font-size:16px; line-height:1.3; }
+  .credit-warning { text-align:center; color:#161f2a; font-size:11px; font-weight:600; margin-top:-32px; margin-bottom:32px; line-height:1.3; opacity:0.85; }
   .form-section { margin-bottom:32px; }
   .form-label { display:flex; align-items:center; gap:12px; font-weight:600; color:#1e293b; margin-bottom:16px; }
   .info-tooltip { position:relative; cursor:help; display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#161f2a; color:#fff; font-family:'Courier New','Monaco','Consolas',monospace; font-size:12px; font-weight:700; }
@@ -126,6 +139,7 @@ window.initSimulateur = function(opts) {
     <div class="simulator-card">
       <h2>${titre}</h2>
       <p class="subtitle">Découvrez votre mensualité selon votre apport</p>
+      <p class="credit-warning">Un crédit vous engage et doit être remboursé. Vérifiez vos capacités de remboursement avant de vous engager.</p>
       <div class="form-section">
         <div class="form-label">
           Apport personnel
@@ -159,7 +173,7 @@ window.initSimulateur = function(opts) {
         <div class="detail-row"><span>Apport</span><span id="apport-aff-${uid}"></span></div>
         <div class="detail-row"><span>Montant</span><span id="montant-aff-${uid}"></span></div>
         <div class="detail-row"><span>Durée</span><span id="duree-aff-${uid}"></span></div>
-        <div class="detail-row"><span>TAEG</span><span>${String(cfg.TAEG).replace('.', ',')} %</span></div>
+        <div class="detail-row"><span>TAEG</span><span id="taeg-${uid}"></span></div>
         <div class="detail-row"><span>Coût crédit</span><span id="cout-${uid}"></span></div>
       </div>
       <button class="cta-button" id="cta-${uid}">Obtenir cette offre</button>
@@ -190,6 +204,7 @@ window.initSimulateur = function(opts) {
         track = $('track'), afinancer = $('afinancer'), pct = $('pct'),
         mens = $('mens'), apportAff = $('apport-aff'), montantAff = $('montant-aff'),
         dureeAff = $('duree-aff'), cout = $('cout'), legal = $('legal'),
+        taegEl = $('taeg'),
         modal = $('modal'), cta = $('cta'), close = $('close'), form = $('form');
 
   function calcule() {
@@ -205,7 +220,8 @@ window.initSimulateur = function(opts) {
     pct.textContent = Math.round(v / prix * 100) + ' %';
 
     const d = parseInt(selectDuree.value) || dureeDefaut;
-    const taux = cfg.TAEG / 100 / 12;
+    const TAEG = getTaeg(montantFinance);          // ← taux selon le palier
+    const taux = TAEG / 100 / 12;
     const ms = ((montantFinance * taux * Math.pow(1 + taux, d)) / (Math.pow(1 + taux, d) - 1)) || 0;
     const mensualite = Math.round(ms);
     const coutCredit = mensualite * d - montantFinance;
@@ -215,6 +231,7 @@ window.initSimulateur = function(opts) {
     montantAff.textContent = fmtEUR(montantFinance);
     dureeAff.textContent = d + ' mois';
     cout.textContent = fmtEUR(coutCredit);
+    taegEl.textContent = String(TAEG).replace('.', ',') + ' %';
 
     // Mémorise l'état courant pour la soumission HubSpot
     SIM = {
@@ -222,14 +239,14 @@ window.initSimulateur = function(opts) {
       montant_a_financer: String(montantFinance),
       mensualite: String(mensualite),
       duree_credit: String(d),
-      taeg: String(cfg.TAEG),
+      taeg: String(TAEG),
       cout_credit: String(coutCredit),
       prix_produit: String(prix)
     };
 
-    legal.textContent = montantFinance <= 0
-      ? "Simulation sous réserve d'acceptation de votre dossier par l'établissement prêteur. Aucun financement nécessaire."
-      : `Simulation sous réserve d'acceptation de votre dossier par l'établissement prêteur. Exemple représentatif pour un crédit de ${fmtEUR(montantFinance)} sur ${d} mois : mensualités de ${mensualite} €, TAEG fixe de ${String(cfg.TAEG).replace('.', ',')} %, coût total du crédit ${fmtEUR(coutCredit)}.`;
+    legal.innerHTML = montantFinance <= 0
+      ? "Simulation non contractuelle, sous réserve d'étude et d'acceptation de votre dossier par l'organisme prêteur. Aucun financement nécessaire pour ce montant d'apport."
+      : `<strong>Un crédit vous engage et doit être remboursé. Vérifiez vos capacités de remboursement avant de vous engager.</strong> Simulation non contractuelle, hors assurance facultative, donnée à titre indicatif et sous réserve d'étude et d'acceptation de votre dossier par l'organisme prêteur. Exemple représentatif (hors assurance facultative) : pour un crédit affecté de ${fmtEUR(montantFinance)} sur ${d} mois au TAEG annuel fixe de ${String(TAEG).replace('.', ',')} %, vous remboursez ${d} mensualités de ${mensualite} €. Montant total dû : ${fmtEUR(montantFinance + coutCredit)} (dont ${fmtEUR(coutCredit)} d'intérêts), frais de dossier inclus. Vous disposez d'un délai légal de rétractation de 14 jours. Prêteur : Arkéa Financements & Services (marque Meia), SA à Directoire et Conseil de surveillance au capital de 210 000 000 €, RCS Brest B 338 138 795, 335 rue Antoine de Saint-Exupéry, 29490 Guipavas, société de courtage d'assurances n° ORIAS 07 019 193 (www.orias.fr). Intermédiaire de crédit non exclusif : JP3, SAS au capital de 15 000 €, RCS Rouen, n° ORIAS 16003268, ZAC du Clos aux Antes, 76410 Tourville-la-Rivière. Une assurance facultative peut vous être proposée. Offre réservée aux particuliers, sous réserve d'acceptation par le prêteur.`;
   }
 
   inputApport.addEventListener('input', calcule);
