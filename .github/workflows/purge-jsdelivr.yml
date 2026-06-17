@@ -1,0 +1,27 @@
+name: Purge jsDelivr cache
+
+# Se déclenche à chaque push sur la branche main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Purge des fichiers jsDelivr
+        run: |
+          # Liste des fichiers à purger (ajoute une ligne par fichier si besoin)
+          FILES=(
+            "simulateur-financement.js"
+            "comparateur-final-sync-v5.js"
+          )
+
+          for FILE in "${FILES[@]}"; do
+            echo "Purge de $FILE ..."
+            curl -s "https://purge.jsdelivr.net/gh/contact78/bluelagoon-comparateur@latest/$FILE"
+            echo ""
+          done
+
+          echo "Purge terminée."
