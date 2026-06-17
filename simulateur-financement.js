@@ -18,7 +18,7 @@ const FINANCEMENT_CONFIG = {
   MIN_APPORT: 500,        // apport minimum
   // Apport par défaut : pourcentage du prix (30 % ici)
   APPORT_DEFAUT_PCT: 0.30,
-  DUREE_DEFAUT: 60,       // mois
+  DUREE_DEFAUT: 72,       // mois
   DUREES: [24, 36, 48, 60, 72, 84, 96, 108],
 
   // ─── HubSpot (formulaire externe "Formulaire de simulation crédit") ───
@@ -110,14 +110,16 @@ window.initSimulateur = function(opts) {
   // Apport minimum : surchargé par produit, sinon valeur globale
   const minApport = (opts.minApport != null) ? opts.minApport : cfg.MIN_APPORT;
 
-  // Apport par défaut : valeur explicite du produit, sinon % du prix
-  const apportDefaut = Math.min(
-    maxApport,
-    Math.max(
-      minApport,
-      (opts.apportDefaut != null) ? opts.apportDefaut : Math.round(prix * cfg.APPORT_DEFAUT_PCT)
-    )
-  );
+  // Apport par défaut : priorité au montant fixe, sinon pourcentage du produit, sinon % global
+  let apportBase;
+  if (opts.apportDefaut != null) {
+    apportBase = opts.apportDefaut;                       // montant fixe en €
+  } else if (opts.apportDefautPct != null) {
+    apportBase = Math.round(prix * opts.apportDefautPct); // % passé par la page
+  } else {
+    apportBase = Math.round(prix * cfg.APPORT_DEFAUT_PCT); // % global par défaut
+  }
+  const apportDefaut = Math.min(maxApport, Math.max(minApport, apportBase));
 
   // Durée par défaut : surchargée par produit, sinon valeur globale
   const dureeDefaut = (opts.dureeDefaut != null) ? opts.dureeDefaut : cfg.DUREE_DEFAUT;
